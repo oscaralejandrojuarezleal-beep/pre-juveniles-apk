@@ -124,6 +124,7 @@ class MainActivity : ComponentActivity() {
         web.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 cargador.shouldInterceptRequest(request.url)
+                    ?: CacheExterna.servir(this@MainActivity, request)
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 if (request.url.host == WebViewAssetLoader.DEFAULT_DOMAIN) return false
