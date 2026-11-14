@@ -5,12 +5,14 @@ Sin Firebase, 100 % gratis.
 
 ## Cómo funciona
 
-- **Una sola base de código:** la APK baja la app completa desde tu script (`/exec?apk=bundle`).
+- **Una sola base de código:** la APK baja la app completa desde tu script (`PRE_apiAppApk` por `doPost`).
   Lo que cambiás en Apps Script le llega a la web y a la APK.
 - **Rápida y sin conexión:** la app queda guardada en el celular y abre al instante.
   Biblias, libros y datos se guardan como ya lo hacía la web (IndexedDB), pero Android no los borra.
-- **Actualizaciones con botón:** cuando subís `PRE_APP_BUILD_` y hacés una nueva implementación,
-  a cada usuario le aparece "Hay una versión nueva de la app → Actualizar". No hay que reinstalar.
+- **Actualizaciones automáticas:** con sólo hacer Implementar → Nueva versión, la "huella" de la app cambia
+  y a cada usuario le aparece "Hay una versión nueva de la app → Actualizar" (se revisa al abrir y cada
+  10 minutos; si tocan "Después", no insiste hasta el día siguiente). No hay que reinstalar ni tocar números.
+- **Sin conexión completa:** las librerías y fuentes de internet quedan guardadas en el celular (`CacheExterna.kt`).
 - **Chequeo nocturno (21:30 aprox.)** con la app cerrada: si hay novedades, llega una notificación.
   Al abrir la app, aparecen los botones para elegir qué hacer.
 
@@ -26,15 +28,13 @@ Sin Firebase, 100 % gratis.
 | `Novedades.kt` | Chequeo nocturno y notificación |
 | `Notificaciones.kt` | Notificaciones del celular |
 | `Red.kt` | Llamadas a internet |
+| `CacheExterna.kt` | Guarda librerías y fuentes para usar sin internet |
 | `assets/www/index.html` | Pantalla "Preparando la app…" (sólo la primera vez) |
-
-Los archivos `BakingScreen.kt`, `BakingViewModel.kt`, `UiState.kt` y `ui/theme/*` son de la plantilla de
-ejemplo y quedaron vacíos: se pueden borrar.
 
 ## Dos tipos de actualización
 
-1. **Pantallas, estilos y lógica (Apps Script):** subí `PRE_APP_BUILD_` y hacé una nueva versión de la
-   implementación. Las apps muestran "Hay una versión nueva de la app → Actualizar". No se reinstala nada.
+1. **Pantallas, estilos y lógica (Apps Script):** sólo Implementar → Nueva versión. Las apps muestran
+   "Hay una versión nueva de la app → Actualizar". No se reinstala nada.
 2. **Parte Android (esta carpeta):** cada cambio subido a la rama `main` lo compila GitHub solo
    (pestaña **Actions**) y lo publica en **Releases**. Al abrir la app aparece
    "Actualización disponible → Instalar". El número de versión lo pone GitHub solo.
