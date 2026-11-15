@@ -29,6 +29,10 @@ class PuenteJs(private val act: MainActivity) {
     @JavascriptInterface
     fun buildLocal(): String = Actualizador.buildLocal(act)
 
+    /** true: Android ya revisa solo si hay versión nueva (la página no necesita hacerlo). */
+    @JavascriptInterface
+    fun revisaSolo(): Boolean = true
+
     /** La app avisa su sesión para que el chequeo nocturno pueda preguntar novedades. */
     @JavascriptInterface
     fun guardarToken(token: String?) {

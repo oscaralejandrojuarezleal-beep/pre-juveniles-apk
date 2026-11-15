@@ -18,6 +18,9 @@ object Config {
     /** Nombre del archivo de preferencias interno. */
     const val PREFS = "pre_apk"
 
+    /** Función liviana que devuelve la "huella" de la app publicada. */
+    const val FN_HUELLA = "PRE_apiHuellaApp"
+
     /** Hora aproximada del chequeo nocturno de novedades (24 h). */
     const val HORA_CHEQUEO = 21
     const val MINUTO_CHEQUEO = 30
