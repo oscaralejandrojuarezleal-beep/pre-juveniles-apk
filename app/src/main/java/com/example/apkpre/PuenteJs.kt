@@ -105,6 +105,21 @@ class PuenteJs(private val act: MainActivity) {
     @JavascriptInterface
     fun notificacionesPermitidas(): Boolean = Notificaciones.permitido(act)
 
+    /** Calendario "PRE Juveniles": pide permiso y carga actividades y cumpleaños. */
+    @JavascriptInterface
+    fun agregarCalendario() {
+        act.runOnUiThread { act.agregarCalendario() }
+    }
+
+    @JavascriptInterface
+    fun quitarCalendario() {
+        act.runOnUiThread { act.quitarCalendario() }
+    }
+
+    /** true si la persona ya activó el calendario. */
+    @JavascriptInterface
+    fun calendarioActivo(): Boolean = Calendario.activo(act) && Calendario.permisoOk(act)
+
     @JavascriptInterface
     fun hayInternet(): Boolean {
         val cm = act.getSystemService(ConnectivityManager::class.java) ?: return false

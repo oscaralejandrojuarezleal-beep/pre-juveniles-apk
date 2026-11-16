@@ -30,11 +30,12 @@ object Notificaciones {
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
 
-    fun mostrar(ctx: Context, titulo: String, texto: String, id: Int = 1001) {
+    fun mostrar(ctx: Context, titulo: String, texto: String, id: Int = 1001, abrirPagina: String = "") {
         if (!permitido(ctx)) return
         crearCanal(ctx)
         val abrir = Intent(ctx, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .putExtra("abrir", abrirPagina)
         val alTocar = PendingIntent.getActivity(
             ctx, id, abrir, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )

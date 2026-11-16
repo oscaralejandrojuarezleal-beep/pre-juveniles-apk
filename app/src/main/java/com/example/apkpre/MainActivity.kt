@@ -1,5 +1,7 @@
 package com.example.apkpre
 
+import kotlin.concurrent.thread
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
@@ -45,6 +47,76 @@ class MainActivity : ComponentActivity() {
 
     private val pedirPermisoNotificaciones =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private val pedirPermisoCalendario =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
+            if (res.values.all { it }) sincronizarCalendario(true)
+            else {
+                aviso("Sin permiso no se puede agregar al calendario. Podés activarlo cuando quieras.")
+                ejecutarJs("window.PRE_APK_calendario && window.PRE_APK_calendario('sin_permiso')")
+            }
+        }
+
+    /** Página a abrir cuando se toca una notificación (devocional, capacitación, etc.). */
+    private var paginaPendiente: String = ""
+
+    /** Pide permiso (si hace falta) y carga/actualiza el calendario "PRE Juveniles". */
+    fun agregarCalendario() {
+        if (Calendario.permisoOk(this)) sincronizarCalendario(true)
+        else pedirPermisoCalendario.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR))
+    }
+
+    fun sincronizarCalendario(avisar: Boolean) {
+        thread(name = "calendario") {
+            try {
+                val datos = Novedades.pedirDatos(this)
+                if (datos == null) {
+                    if (avisar) runOnUiThread { aviso("Iniciá sesión en la app y probá de nuevo.") }
+                    return@thread
+                }
+                val n = Calendario.sincronizar(this, datos)
+                if (n >= 0) {
+                    Calendario.marcarActivo(this, true)
+                    if (avisar) runOnUiThread {
+                        aviso("Listo: " + n + " fechas en tu calendario \"PRE Juveniles\".")
+                        ejecutarJs("window.PRE_APK_calendario && window.PRE_APK_calendario('ok'," + n + ")")
+                    }
+                }
+            } catch (e: Exception) {
+                if (avisar) runOnUiThread { aviso("No se pudo actualizar el calendario. Revisá la conexión.") }
+            }
+        }
+    }
+
+    fun quitarCalendario() {
+        thread(name = "calendario") {
+            try {
+                Calendario.quitar(this)
+            } catch (e: Exception) {
+            }
+            runOnUiThread {
+                aviso("Se quitó el calendario \"PRE Juveniles\".")
+                ejecutarJs("window.PRE_APK_calendario && window.PRE_APK_calendario('quitado')")
+            }
+        }
+    }
+
+    private fun abrirPaginaPendiente() {
+        val p = paginaPendiente
+        if (p.isBlank()) return
+        paginaPendiente = ""
+        val seguro = p.replace(Regex("[^a-zA-Z]"), "")
+        // Espera a que la app termine de arrancar e inicie sesión.
+        web.postDelayed({
+            ejecutarJs("(function t(n){try{if(window.PRE_APP&&PRE_APP.sesion){PRE_APP.abrir('" + seguro + "');return;}}catch(e){} if(n<20)setTimeout(function(){t(n+1)},700);})(0)")
+        }, 1500)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        paginaPendiente = intent.getStringExtra("abrir") ?: ""
+        abrirPaginaPendiente()
+    }
 
     private val elegirArchivo =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { resultado ->
@@ -98,6 +170,12 @@ class MainActivity : ComponentActivity() {
 
         // ¿Hay una versión nueva de la app en Apps Script? (lo revisa Android, no la página)
         RevisarApp.revisar(this, forzar = true)
+
+        // Calendario "PRE Juveniles": si la persona lo activó, se pone al día al abrir.
+        if (Calendario.activo(this) && Calendario.permisoOk(this)) sincronizarCalendario(false)
+
+        paginaPendiente = intent?.getStringExtra("abrir") ?: ""
+        if (savedInstanceState == null) abrirPaginaPendiente()
 
         if (Build.VERSION.SDK_INT >= 33 && !Notificaciones.permitido(this)) {
             pedirPermisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)

@@ -21,7 +21,11 @@ object Config {
     /** Función liviana que devuelve la "huella" de la app publicada. */
     const val FN_HUELLA = "PRE_apiHuellaApp"
 
-    /** Hora aproximada del chequeo nocturno de novedades (24 h). */
+    /** Aviso de la noche (capacitaciones nuevas), 24 h. */
     const val HORA_CHEQUEO = 21
     const val MINUTO_CHEQUEO = 30
+
+    /** Aviso de la mañana (devocional del día y cumpleaños). */
+    const val HORA_MANANA = 7
+    const val MINUTO_MANANA = 30
 }
