@@ -274,7 +274,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // La persona ya está en la app: los avisos de la barra se van solos y no se muestran nuevos mientras la usa.
+        Notificaciones.enPrimerPlano = true
+        Notificaciones.limpiar(this)
         RevisarApp.revisar(this)
+    }
+
+    override fun onPause() {
+        Notificaciones.enPrimerPlano = false
+        super.onPause()
     }
 
     fun recargar() {

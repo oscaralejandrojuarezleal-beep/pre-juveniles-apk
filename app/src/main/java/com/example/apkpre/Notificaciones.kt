@@ -17,6 +17,21 @@ object Notificaciones {
 
     private const val CANAL = "novedades"
 
+    /** true mientras la app está abierta en pantalla (la marca MainActivity). */
+    @Volatile var enPrimerPlano = false
+
+    /** Avisos automáticos de la app (devocional, cumpleaños, capacitaciones). */
+    private val IDS_AVISOS = intArrayOf(2001, 2002, 2003)
+
+    /** Al abrir la app se quitan de la barra: ya los está viendo adentro. */
+    fun limpiar(ctx: Context) {
+        try {
+            val nm = NotificationManagerCompat.from(ctx)
+            IDS_AVISOS.forEach { nm.cancel(it) }
+        } catch (e: Exception) {
+        }
+    }
+
     fun crearCanal(ctx: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val canal = NotificationChannel(CANAL, "Novedades", NotificationManager.IMPORTANCE_DEFAULT)

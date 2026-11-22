@@ -32,6 +32,13 @@ object Novedades {
     fun programar(ctx: Context) {
         val wm = WorkManager.getInstance(ctx)
         wm.cancelUniqueWork("pre_chequeo_nocturno") // el aviso genérico de antes
+        // Una sola vez: los avisos programados antes con UPDATE se rearman (se reprogramaban en cada apertura).
+        val prefs = ctx.getSharedPreferences(Config.PREFS, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("avisos_v2", false)) {
+            wm.cancelUniqueWork(MANANA)
+            wm.cancelUniqueWork(NOCHE)
+            prefs.edit().putBoolean("avisos_v2", true).apply()
+        }
         programarUno(ctx, MANANA, Config.HORA_MANANA, Config.MINUTO_MANANA, "manana")
         programarUno(ctx, NOCHE, Config.HORA_CHEQUEO, Config.MINUTO_CHEQUEO, "noche")
     }
@@ -49,7 +56,7 @@ object Novedades {
             .setInputData(workDataOf("momento" to momento))
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
-        WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(nombre, ExistingPeriodicWorkPolicy.UPDATE, pedido)
+        WorkManager.getInstance(ctx).enqueueUniquePeriodicWork(nombre, ExistingPeriodicWorkPolicy.KEEP, pedido)
     }
 
     /** Pide al servidor actividades, cumpleaños, devocionales y capacitaciones de esta persona. */
@@ -66,11 +73,24 @@ object Novedades {
 
     fun hoy(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
+    /**
+     * Android a veces atrasa los avisos (ahorro de batería) y los larga horas después, por ejemplo
+     * justo al abrir la app. Sólo se avisa dentro de su horario y si la app no está abierta.
+     */
+    fun enHorario(momento: String): Boolean {
+        val h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        return if (momento == "manana") h in 6..10 else h in 19..23
+    }
+
     /** Aviso de la mañana: devocional en curso y cumpleaños de hoy (una vez por día). */
     fun avisosManana(ctx: Context, datos: JSONObject) {
         val prefs = ctx.getSharedPreferences(Config.PREFS, Context.MODE_PRIVATE)
         val hoy = hoy()
         if (prefs.getString("aviso_manana_dia", "") == hoy) return
+        if (Notificaciones.enPrimerPlano || !enHorario("manana")) {
+            prefs.edit().putString("aviso_manana_dia", hoy).apply()
+            return
+        }
         val devs = datos.optJSONArray("devocionales") ?: JSONArray()
         if (devs.length() > 0) {
             val d = devs.getJSONObject(0)
@@ -119,7 +139,10 @@ object Novedades {
             vigentes.add(id)
             if (id.isNotBlank() && id !in avisadas) nuevas.add(c.optString("titulo"))
         }
-        if (nuevas.isNotEmpty()) {
+        // Fuera de horario no se avisa ni se marca: queda para la noche siguiente.
+        if (nuevas.isNotEmpty() && !enHorario("noche")) return
+        // Con la app abierta ya las ve adentro: se marcan como avisadas sin notificar.
+        if (nuevas.isNotEmpty() && !Notificaciones.enPrimerPlano) {
             Notificaciones.mostrar(
                 ctx,
                 if (nuevas.size == 1) "📚 Nueva capacitación" else "📚 " + nuevas.size + " capacitaciones nuevas",
