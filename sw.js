@@ -5,7 +5,7 @@
  * - Librerías externas (Bootstrap, íconos, fuentes, jsPDF…): se guardan la primera vez que se usan.
  * Los pedidos al servidor (Apps Script) NUNCA se guardan: siempre van directo.
  */
-var VERSION = 'v1';
+var VERSION = 'v2';
 var CASCARA = 'pre-cascara-' + VERSION;
 var EXTERNOS = 'pre-externos';
 var CONTENIDO = 'pre-contenido';

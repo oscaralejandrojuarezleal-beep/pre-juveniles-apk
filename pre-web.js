@@ -118,10 +118,27 @@
       });
     };
   }
-  function revisar() {}
+  // ¿Hay versión nueva publicada? Se compara la "huella" del código (igual que la APK).
+  // Si cambió, se baja por detrás y aparece el cartel "Hay una versión nueva" → Actualizar.
+  // (Antes no se revisaba: la web de GitHub quedaba con la versión vieja, por ejemplo sin la TPT.)
+  var revisando = false, avisada = false;
+  function revisar() {
+    if (revisando || avisada || navigator.onLine === false) return;
+    revisando = true;
+    llamar('PRE_apiHuellaApp', 60000).then(function (r) {
+      var nueva = String((r && r.huella) || '');
+      if (!nueva || nueva === leer('PRE_WEB_BUILD')) return;
+      return bajar().then(function () { avisada = true; cartel(); });
+    }).catch(function () {}).then(function () { revisando = false; });
+  }
 
   window.PREWeb = { apiUrl: API_URL, bajar: bajar, tieneApp: tieneApp, revisar: revisar };
 
   // Dentro de la app guardada.
-  if (/app\.html$/.test(location.pathname)) engancharActualizar(0);
+  if (/app\.html$/.test(location.pathname)) {
+    engancharActualizar(0);
+    setTimeout(revisar, 4000);
+    setInterval(revisar, CADA_MS);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') revisar(); });
+  }
 })();
